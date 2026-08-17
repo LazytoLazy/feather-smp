@@ -1,0 +1,54 @@
+# FeatherSMP configuration
+# Cooldowns are in seconds. Set to 0 to disable cooldown for a given ability.
+# "weak" = plain right-click ability (always usable)
+# "strong" = shift + right-click ability (only usable once the feather is
+#            upgraded with a Feather Upgrade Token)
+
+prefix: "&8[&bFeatherSMP&8] &r"
+
+# Feathers are reusable items gated by cooldowns rather than single-use.
+# Set true if you'd rather they be consumed on every use instead.
+consume-on-use: false
+
+cooldowns:
+  inferno:
+    weak: 20
+    strong: 180
+  gale:
+    weak: 10
+    strong: 20
+  phoenix:
+    weak: 45
+    strong: 240
+  shadow:
+    weak: 20
+    strong: 90
+  storm:
+    weak: 15
+    strong: 60
+  frost:
+    weak: 15
+    strong: 45
+  void:
+    weak: 8
+    strong: 15
+  aqua:
+    weak: 30
+    strong: 120
+  stone:
+    weak: 20
+    strong: 90
+  radiant:
+    weak: 20
+    strong: 60
+
+messages:
+  on-cooldown: "&cThat ability is on cooldown for &e{time}s&c."
+  ability-locked: "&cThat ability is locked. &7Combine this feather with an Upgrade Token in a crafting table."
+  used: "&aYou feel the power of &f{ability} &acourse through you!"
+  no-permission: "&cYou don't have permission to do that."
+  gave-feather: "&aGave {amount}x {feather} &ato {player}."
+  received-feather: "&aYou received {amount}x {feather}&a."
+  invalid-type: "&cUnknown feather type. Use /feather list to see valid types."
+  player-not-found: "&cPlayer not found."
+  reloaded: "&aFeatherSMP config reloaded."

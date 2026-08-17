@@ -1,0 +1,34 @@
+name: FeatherSMP
+version: '${project.version}'
+main: com.feathersmp.plugin.FeatherSMP
+api-version: '1.21'
+author: FeatherSMP
+description: Custom feather ability items for Feather SMP (inspired by Bliss SMP gems)
+
+commands:
+  feather:
+    description: Manage and give custom feathers and upgrade tokens
+    usage: /feather <give|items|list|reload> [player] [type] [tier] [amount]
+    permission: feathersmp.use
+    aliases: [feathersmp]
+
+permissions:
+  feathersmp.use:
+    description: Allows using the /feather command to see the list
+    default: true
+  feathersmp.give:
+    description: Allows giving feathers to players
+    default: op
+  feathersmp.items:
+    description: Allows giving Upgrade Tokens to players
+    default: op
+  feathersmp.reload:
+    description: Allows reloading the plugin config
+    default: op
+  feathersmp.admin:
+    description: Grants all FeatherSMP permissions
+    default: op
+    children:
+      feathersmp.give: true
+      feathersmp.items: true
+      feathersmp.reload: true
