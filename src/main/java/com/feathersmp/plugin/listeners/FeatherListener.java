@@ -8,6 +8,7 @@ import com.feathersmp.plugin.FeatherType;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -24,7 +25,11 @@ public class FeatherListener implements Listener {
         this.manager = plugin.getFeatherManager();
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // ignoreCancelled = false so the ability still fires even if the block
+    // interaction (or another plugin) already cancelled the event - this is
+    // what makes right-clicking in open air behave the same as right-clicking
+    // a block.
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
     public void onFeatherUse(PlayerInteractEvent event) {
         // Only handle the main hand so a dual-wielded off-hand item doesn't fire twice.
         if (event.getHand() != EquipmentSlot.HAND) {
@@ -42,6 +47,8 @@ public class FeatherListener implements Listener {
         }
 
         event.setCancelled(true);
+        event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+        event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
         Player player = event.getPlayer();
 
         AbilityTier ability = player.isSneaking() ? AbilityTier.STRONG : AbilityTier.WEAK;

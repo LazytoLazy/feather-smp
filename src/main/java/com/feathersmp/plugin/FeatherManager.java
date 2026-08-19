@@ -8,7 +8,9 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
@@ -78,6 +80,35 @@ public class FeatherManager {
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         meta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, type.getId());
         meta.getPersistentDataContainer().set(tierKey, PersistentDataType.STRING, tier.name());
+
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    /** Builds a display-only item for the /feather list catalog GUI, showing both abilities and their cooldowns. */
+    public ItemStack createCatalogItem(FeatherType type) {
+        ItemStack item = new ItemStack(Material.FEATHER);
+        ItemMeta meta = item.getItemMeta();
+
+        meta.setDisplayName(color(type.getDisplayName()));
+
+        int weakCooldown = plugin.getConfig().getInt("cooldowns." + type.getId() + ".weak", 20);
+        int strongCooldown = plugin.getConfig().getInt("cooldowns." + type.getId() + ".strong", 90);
+
+        List<String> lore = new ArrayList<>();
+        lore.add(color("&a&l> &aRight-Click: &f" + type.getAbilityName(AbilityTier.WEAK)));
+        lore.add(color("  &7" + type.getAbilityDescription(AbilityTier.WEAK)));
+        lore.add(color("  &7Cooldown: &f" + weakCooldown + "s"));
+        lore.add("");
+        lore.add(color("&c&l> &cShift + Right-Click: &f" + type.getAbilityName(AbilityTier.STRONG)));
+        lore.add(color("  &7" + type.getAbilityDescription(AbilityTier.STRONG)));
+        lore.add(color("  &7Cooldown: &f" + strongCooldown + "s"));
+        lore.add("");
+        lore.add(color("&8Craft an Upgrade Token to unlock the strong ability"));
+
+        meta.setLore(lore);
+        meta.setCustomModelData(type.getCustomModelData());
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
 
         item.setItemMeta(meta);
         return item;
@@ -361,6 +392,98 @@ public class FeatherManager {
             recipe.addIngredient(new RecipeChoice.ExactChoice(createUpgradeToken()));
             Bukkit.addRecipe(recipe);
         }
+    }
+
+    // ----------------------------------------------------------------
+    // Single-feather limit (max 1 feather across inventory/offhand/crafting slots)
+    // ----------------------------------------------------------------
+
+    /**
+     * Ensures the player is holding at most 1 feather total across their
+     * main inventory, offhand, and any crafting grid they currently have
+     * open. Anything past the first feather found is dropped at their feet.
+     * Returns true if anything was dropped.
+     */
+    public boolean enforceSingleFeather(Player player) {
+        int[] keep = {1};
+        boolean[] dropped = {false};
+
+        ItemStack offhand = player.getInventory().getItemInOffHand();
+        if (getFeatherType(offhand) != null) {
+            ItemStack trimmed = trim(player, offhand, keep, dropped);
+            player.getInventory().setItemInOffHand(trimmed);
+        }
+
+        ItemStack[] storage = player.getInventory().getStorageContents();
+        boolean storageChanged = false;
+        for (int i = 0; i < storage.length; i++) {
+            if (getFeatherType(storage[i]) != null) {
+                storage[i] = trim(player, storage[i], keep, dropped);
+                storageChanged = true;
+            }
+        }
+        if (storageChanged) {
+            player.getInventory().setStorageContents(storage);
+        }
+
+        Inventory topInventory = player.getOpenInventory().getTopInventory();
+        if (topInventory instanceof CraftingInventory craftingInventory) {
+            ItemStack[] matrix = craftingInventory.getMatrix();
+            boolean matrixChanged = false;
+            for (int i = 0; i < matrix.length; i++) {
+                if (getFeatherType(matrix[i]) != null) {
+                    matrix[i] = trim(player, matrix[i], keep, dropped);
+                    matrixChanged = true;
+                }
+            }
+            if (matrixChanged) {
+                craftingInventory.setMatrix(matrix);
+            }
+        }
+
+        return dropped[0];
+    }
+
+    /** Keeps up to keep[0] of the stack in place, drops the remainder, and decrements keep[0]. */
+    private ItemStack trim(Player player, ItemStack stack, int[] keep, boolean[] dropped) {
+        int amount = stack.getAmount();
+        if (keep[0] <= 0) {
+            player.getWorld().dropItemNaturally(player.getLocation(), stack.clone());
+            dropped[0] = true;
+            return null;
+        }
+        if (amount <= keep[0]) {
+            keep[0] -= amount;
+            return stack;
+        }
+        int keepHere = keep[0];
+        int dropAmount = amount - keepHere;
+        ItemStack toDrop = stack.clone();
+        toDrop.setAmount(dropAmount);
+        player.getWorld().dropItemNaturally(player.getLocation(), toDrop);
+        dropped[0] = true;
+        keep[0] = 0;
+        if (keepHere == 0) {
+            return null;
+        }
+        ItemStack kept = stack.clone();
+        kept.setAmount(keepHere);
+        return kept;
+    }
+
+    /** Runs the single-feather check one tick later (so the triggering action has already resolved) and messages the player if anything was dropped. */
+    public void scheduleFeatherLimitCheck(Player player) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            boolean dropped = enforceSingleFeather(player);
+            if (dropped) {
+                player.sendMessage(color(plugin.getConfig().getString("prefix", "&8[&bFeatherSMP&8] &r")
+                        + plugin.getConfig().getString("messages.feather-limit-exceeded",
+                        "&cYou can only hold 1 feather at a time - the extras were dropped.")));
+            }
+        });
     }
 
     private String color(String text) {

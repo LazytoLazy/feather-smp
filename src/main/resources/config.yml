@@ -45,6 +45,7 @@ cooldowns:
 messages:
   on-cooldown: "&cThat ability is on cooldown for &e{time}s&c."
   ability-locked: "&cThat ability is locked. &7Combine this feather with an Upgrade Token in a crafting table."
+  feather-limit-exceeded: "&cYou can only hold 1 feather at a time - the rest have been dropped."
   used: "&aYou feel the power of &f{ability} &acourse through you!"
   no-permission: "&cYou don't have permission to do that."
   gave-feather: "&aGave {amount}x {feather} &ato {player}."

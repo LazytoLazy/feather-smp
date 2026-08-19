@@ -1,6 +1,8 @@
 package com.feathersmp.plugin;
 
 import com.feathersmp.plugin.commands.FeatherCommand;
+import com.feathersmp.plugin.listeners.FeatherCatalogListener;
+import com.feathersmp.plugin.listeners.FeatherLimitListener;
 import com.feathersmp.plugin.listeners.FeatherListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -22,6 +24,8 @@ public final class FeatherSMP extends JavaPlugin {
         this.featherManager.registerRecipes();
 
         getServer().getPluginManager().registerEvents(new FeatherListener(this), this);
+        getServer().getPluginManager().registerEvents(new FeatherCatalogListener(), this);
+        getServer().getPluginManager().registerEvents(new FeatherLimitListener(this), this);
 
         FeatherCommand featherCommand = new FeatherCommand(this);
         getCommand("feather").setExecutor(featherCommand);

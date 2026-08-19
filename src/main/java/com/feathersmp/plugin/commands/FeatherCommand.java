@@ -52,6 +52,12 @@ public class FeatherCommand implements CommandExecutor, TabCompleter {
     }
 
     private void handleList(CommandSender sender) {
+        if (sender instanceof Player player) {
+            com.feathersmp.plugin.gui.FeatherCatalogGUI.open(player, manager);
+            return;
+        }
+
+        // Console/command blocks can't open an inventory GUI - fall back to text.
         sender.sendMessage(color("&b--- FeatherSMP Feathers ---"));
         for (FeatherType type : FeatherType.values()) {
             sender.sendMessage(color(type.getDisplayName() + " &7(" + type.getId() + ")"));
